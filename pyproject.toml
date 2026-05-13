@@ -1,0 +1,20 @@
+[project]
+name = "rl-prompt-injection"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+	"fastapi>=0.115.0",
+	"langchain-huggingface>=0.1.0",
+	"nemoguardrails>=0.12.0",
+	"python-dotenv>=1.1.0",
+	"torch>=2.6.0",
+	"transformers>=4.52.0",
+	"uvicorn>=0.34.0",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: tests that require a running Phase 1 API service",
+]
