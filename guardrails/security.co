@@ -1,0 +1,8 @@
+define bot refuse with safe message
+  "I cannot provide that information."
+
+# Version-compatible fallback note:
+# Runtime code also performs explicit SSN-pattern blocking.
+# This flow name is referenced in config.yml output rails.
+define flow block ssn pattern
+  bot refuse with safe message
