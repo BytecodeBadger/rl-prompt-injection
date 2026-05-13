@@ -1,0 +1,22 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Local secrets
+.env
+
+# ignore macOS system files
+.DS_Store
+
+# ignore docs folder
+docs/
+
+# ignore .github folder
+.github/
