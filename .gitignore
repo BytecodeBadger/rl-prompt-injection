@@ -20,3 +20,12 @@ docs/
 
 # ignore .github folder
 .github/
+
+# Training artifacts
+training_details.log
+notebook_execution.log
+ppo_redteam.zip
+hall_of_fame.json
+training_metrics.png
+attack_success.png
+ppo_diagnostics.png
