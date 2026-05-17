@@ -145,12 +145,19 @@ def _generate_with_local_model(prompt: str) -> str:
         {"role": "user", "content": prompt},
     ]
 
-    model_inputs = tokenizer.apply_chat_template(
-        messages,
-        add_generation_prompt=True,
-        return_tensors="pt",
-        return_dict=True,
-    )
+    # Try to use chat template if available, otherwise use simple concatenation
+    try:
+        model_inputs = tokenizer.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            return_tensors="pt",
+            return_dict=True,
+        )
+    except (ValueError, AttributeError):
+        # Fallback for models without chat template (like GPT2)
+        text = f"{SYSTEM_PROMPT}\n\nUser: {prompt}\n\nAssistant:"
+        model_inputs = tokenizer(text, return_tensors="pt", return_attention_mask=True)
+    
     model_inputs = {k: v.to(model_device) for k, v in model_inputs.items()}
 
     with torch.inference_mode():
