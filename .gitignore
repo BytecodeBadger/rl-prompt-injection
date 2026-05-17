@@ -29,3 +29,6 @@ hall_of_fame.json
 training_metrics.png
 attack_success.png
 ppo_diagnostics.png
+
+# training log files
+*.log
