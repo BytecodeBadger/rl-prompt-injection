@@ -27,3 +27,6 @@ dependencies = [
 markers = [
     "integration: tests that require a running Phase 1 API service",
 ]
+
+[project.scripts]
+rl-train = "training.train:main"

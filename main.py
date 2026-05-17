@@ -1,5 +1,8 @@
+from training.train import main as train_main
+
+
 def main():
-    print("Hello from rl-prompt-injection!")
+    train_main()
 
 
 if __name__ == "__main__":
