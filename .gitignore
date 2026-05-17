@@ -32,3 +32,5 @@ ppo_diagnostics.png
 
 # training log files
 *.log
+
+train_agent.executed.ipynb
