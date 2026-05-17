@@ -22,7 +22,7 @@ docs/
 .github/
 
 # Training artifacts
-training_details.log
+logs/
 notebook_execution.log
 ppo_redteam.zip
 hall_of_fame.json
