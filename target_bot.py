@@ -86,6 +86,15 @@ def _init_local_generator() -> LocalGenerator | None:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
 
+    if device == "cuda":
+        try:
+            gpu_name = torch.cuda.get_device_name(0)
+        except Exception:  # pragma: no cover - defensive runtime behavior
+            gpu_name = "unknown-gpu"
+        LOGGER.warning("Local generator using CUDA device: %s", gpu_name)
+    else:
+        LOGGER.warning("Local generator using CPU device")
+
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
     has_accelerate = importlib.util.find_spec("accelerate") is not None
     model_kwargs: dict[str, Any] = {"dtype": dtype}
@@ -219,7 +228,11 @@ async def _startup() -> None:
         try:
             _local_generator = await asyncio.to_thread(_init_local_generator)
             if _local_generator is not None:
-                LOGGER.info("Transformers backend initialized (%s)", MODEL_ID)
+                LOGGER.warning(
+                    "Transformers backend initialized (%s) on %s",
+                    MODEL_ID,
+                    _local_generator.device,
+                )
         except Exception as exc:  # pragma: no cover - defensive runtime behavior
             _local_generator = None
             LOGGER.warning("Failed to initialize local generator: %s", exc)
