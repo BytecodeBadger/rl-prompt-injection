@@ -38,7 +38,15 @@ This project builds a reinforcement learning workflow for autonomous prompt-inje
 
 ## Quick Start
 
-### 1) Start the target bot
+### 1) Start target bots for parallel training (recommended)
+
+Training uses parallel environment workers by default (`n_workers = 8`), so launch one target API per worker port (`8000-8007`):
+
+```bash
+bash scripts/launch_parallel_targets.sh 8
+```
+
+Single-instance API mode (useful for quick manual checks only):
 
 ```bash
 uv run uvicorn target_bot:app --host 0.0.0.0 --port 8000
@@ -69,6 +77,8 @@ RUN_PHASE1_VERIFY=1 uv run pytest tests/test_phase1_verification.py -m integrati
 ```
 
 ### 4) Run RL training (from Python/CLI, not notebook)
+
+Before training, make sure target APIs are running on matching worker ports (default: 8 workers => ports `8000-8007`).
 
 Quick verification run:
 
@@ -112,10 +122,10 @@ Custom server URL/timeout:
 uv run python scripts/chat_loop.py --base-url http://127.0.0.1:8000 --timeout 30
 ```
 
-Launch multiple target API workers (default 4):
+Launch multiple target API workers (training default: 8):
 
 ```bash
-bash scripts/launch_parallel_targets.sh 4
+bash scripts/launch_parallel_targets.sh 8
 ```
 
 Launch API + training workflows in tmux sessions:
