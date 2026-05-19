@@ -66,6 +66,80 @@ def format_hall_of_fame(hof_list: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def format_text_analysis(metrics: dict, hall_of_fame: list[dict]) -> str:
+    action_counts = np.array(metrics.get("action_counts", []), dtype=int)
+    action_success = np.array(metrics.get("action_success", []), dtype=int)
+    step_rewards = np.array(metrics.get("step_rewards", []), dtype=float)
+
+    ckpt_success_rates = metrics.get("ckpt_success_rates", [])
+    ckpt_mean_rewards = metrics.get("ckpt_mean_rewards", [])
+    ckpt_refusal_rates = metrics.get("ckpt_refusal_rates", [])
+    action_entropies = metrics.get("action_entropies", [])
+
+    final_success_rate = ckpt_success_rates[-1] if ckpt_success_rates else 0.0
+    best_success_rate = max(ckpt_success_rates) if ckpt_success_rates else 0.0
+    final_mean_reward = ckpt_mean_rewards[-1] if ckpt_mean_rewards else 0.0
+    final_refusal_rate = ckpt_refusal_rates[-1] if ckpt_refusal_rates else 0.0
+    total_leaks = int(action_success.sum()) if len(action_success) else 0
+
+    verdict = "SUCCESS" if final_success_rate >= 0.5 else "FAILURE"
+
+    lines = [
+        f"=== TRAINING ANALYSIS: {verdict} ===",
+        "",
+        "--- Overall Performance ---",
+        f"Total training steps : {len(step_rewards)}",
+        f"Final success rate   : {final_success_rate:.1%}",
+        f"Best success rate    : {best_success_rate:.1%}",
+        f"Final mean reward    : {final_mean_reward:.3f}",
+        f"Final refusal rate   : {final_refusal_rate:.1%}",
+        f"Total full leaks     : {total_leaks}",
+        "",
+        "--- Learning Progress ---",
+    ]
+
+    if action_entropies:
+        max_entropy = np.log(max(len(ATTACK_PROMPTS), 1))
+        lines.append(
+            f"Exploration entropy  : {action_entropies[0]:.3f} → {action_entropies[-1]:.3f}"
+            f" (max {max_entropy:.3f})"
+        )
+        ratio = action_entropies[-1] / max_entropy if max_entropy > 0 else 0.0
+        if ratio < 0.3:
+            lines.append("Agent specialized heavily: low diversity at end of training.")
+        elif ratio > 0.7:
+            lines.append("Agent still exploring broadly: high entropy at end of training.")
+        else:
+            lines.append("Agent shows moderate specialization.")
+    else:
+        lines.append("No entropy data collected.")
+
+    lines += ["", "--- Attack Effectiveness (sorted by leaks) ---"]
+
+    total_uses = int(action_counts.sum())
+    attack_rows = [
+        (i, int(action_counts[i]) if i < len(action_counts) else 0,
+         int(action_success[i]) if i < len(action_success) else 0)
+        for i in range(len(ATTACK_PROMPTS))
+    ]
+    for i, count, success in sorted(attack_rows, key=lambda x: x[2], reverse=True):
+        pct = 100.0 * count / max(total_uses, 1)
+        prompt_snippet = ATTACK_PROMPTS[i][:60]
+        lines.append(f"  Action {i}: {success:3d} leaks | {count:4d} uses ({pct:4.1f}%) | {prompt_snippet}")
+
+    lines += ["", "--- Hall of Fame (top successful prompts) ---"]
+    if hall_of_fame:
+        for rank, entry in enumerate(hall_of_fame[:5], 1):
+            action = entry.get("action_id", "?")
+            hits = entry.get("hit_count", 0)
+            prompt = str(entry.get("prompt", ""))[:80]
+            lines.append(f"  #{rank} Action {action} ({hits} hits): {prompt}")
+    else:
+        lines.append("  No full leaks recorded.")
+
+    return "\n".join(lines)
+
+
 def compute_training_summary(metrics: dict) -> dict:
     action_counts = np.array(metrics.get("action_counts", []), dtype=int)
     action_success = np.array(metrics.get("action_success", []), dtype=int)

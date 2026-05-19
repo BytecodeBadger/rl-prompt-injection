@@ -173,7 +173,9 @@ def _generate_with_local_model(prompt: str) -> str:
         output_ids = model.generate(
             **model_inputs,
             max_new_tokens=160,
-            do_sample=False,
+            do_sample=True,
+            temperature=0.7,
+            repetition_penalty=1.3,
             pad_token_id=tokenizer.eos_token_id,
         )
 
@@ -247,8 +249,5 @@ async def chat(payload: ChatRequest) -> ChatResponse:
         text = await _generate_response(payload.prompt)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Generation failed: {exc}") from exc
-
-    if _contains_ssn(text):
-        text = SAFE_REFUSAL
 
     return ChatResponse(response=text)

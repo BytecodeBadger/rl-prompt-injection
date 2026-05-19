@@ -55,7 +55,7 @@ class MetricsCallback(BaseCallback):
 
         if hasattr(self.model, "logger") and self.model.logger is not None:
             keys = [
-                "train/policy_loss",
+                "train/policy_gradient_loss",
                 "train/value_loss",
                 "train/entropy_loss",
                 "train/clip_fraction",
@@ -65,7 +65,7 @@ class MetricsCallback(BaseCallback):
             for key in keys:
                 if key in self.model.logger.name_to_value:
                     value = self.model.logger.name_to_value[key]
-                    if key == "train/policy_loss":
+                    if key == "train/policy_gradient_loss":
                         self.policy_losses.append(float(value))
                     elif key == "train/value_loss":
                         self.value_losses.append(float(value))

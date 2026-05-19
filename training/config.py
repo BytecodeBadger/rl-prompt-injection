@@ -39,7 +39,7 @@ def get_training_config(mode: str, output_dir: str = ".") -> dict:
         "learning_rate": 3e-4,
         "batch_size": 64,
         "gamma": 0.99,
-        "ent_coef": 0.1,
+        "ent_coef": 0.3,
         "device": "cpu",
         "output_dir": str(out_dir),
         "model_path": str(out_dir / "ppo_redteam"),
