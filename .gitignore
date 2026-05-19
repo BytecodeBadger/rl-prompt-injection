@@ -12,6 +12,10 @@ wheels/
 # Local secrets
 .env
 
+# Local markdown files (not shared); README.md is explicitly tracked
+*.md
+!README.md
+
 # ignore macOS system files
 .DS_Store
 
