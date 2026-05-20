@@ -18,15 +18,16 @@ This project builds a reinforcement learning workflow for autonomous prompt-inje
 - Gymnasium environment in `attack_env.py` with:
 	- Discrete action space of 6 prompt-injection shorthand attacks
 	- Reward shaping for full leak, partial leak, refusals, and exploration
-	- Multi-turn episodes (`MAX_STEPS = 3`)
+	- Multi-turn episodes (`MAX_STEPS = 6`)
 	- Retry/error handling for API calls and early stop on repeated failures
 	- Hall of Fame tracking and JSON persistence (`hall_of_fame.json`)
 - Python training pipeline in `training/`:
 	- `training/train.py`: CLI and orchestration entrypoint (`run_training`)
-	- `training/config.py`: quick/normal mode config and logging setup
+	- `training/config.py`: quick/normal/curriculum mode config and logging setup
 	- `training/callbacks.py`: PPO metrics collection and JSON persistence
 	- `training/env_factory.py`: vectorized env and eval env creation
 	- `training/preflight.py`: service/security/environment validation checks
+	- `training/notify.py`: training lifecycle notifications
 - Analysis package in `analysis/`:
 	- `analysis/visualization.py`: plot generation from saved metrics artifacts
 	- `analysis/metrics.py`: summaries, Hall of Fame formatting, stochastic audit
@@ -92,6 +93,13 @@ Full training run:
 uv run python main.py --mode normal
 ```
 
+Curriculum training (two-phase, requires `curriculum_p1` checkpoint first):
+
+```bash
+uv run python main.py --mode curriculum_p1
+uv run python main.py --mode curriculum_p2 --pretrained-model ./ppo_curriculum_p1.zip
+```
+
 Optional output directory:
 
 ```bash
@@ -121,7 +129,7 @@ uv run python scripts/chat_loop.py --base-url http://127.0.0.1:8000 --timeout 30
 - `target_bot.py`: Phase 1 guarded target API
 - `verify_phase1.py`: verification checks for Phase 1
 - `attack_env.py`: Phase 2 RL environment and reward logic
-- `training/`: RL training orchestration package (CLI + helpers)
+- `training/`: RL training orchestration package (CLI, config, callbacks, notifications)
 - `analysis/`: post-training analysis and visualization package
 - `train_agent.ipynb`: post-training analysis notebook (no training orchestration)
 - `scripts/`: helper launch and client scripts
@@ -134,4 +142,4 @@ uv run python scripts/chat_loop.py --base-url http://127.0.0.1:8000 --timeout 30
 - Use `uv` for dependency management and command execution.
 - Keep secrets in `.env` (do not commit `.env`; commit `.env.example` if needed).
 - `main.py` is the training CLI wrapper entrypoint.
-- Training should be initiated from Python entrypoints (`main.py` or `rl-train`), not from notebooks.
+- Training should be initiated from Python entrypoints (`main.py`), not from notebooks.
