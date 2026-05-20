@@ -6,10 +6,13 @@ from pathlib import Path
 from attack_env import SEED
 
 
+_VALID_MODES = {"quick", "normal", "curriculum_p1", "curriculum_p2"}
+
+
 def get_training_config(mode: str, output_dir: str = ".") -> dict:
     normalized_mode = mode.strip().lower()
-    if normalized_mode not in {"quick", "normal"}:
-        raise ValueError("mode must be 'quick' or 'normal'")
+    if normalized_mode not in _VALID_MODES:
+        raise ValueError(f"mode must be one of {sorted(_VALID_MODES)}")
 
     quick_pass = normalized_mode == "quick"
     out_dir = Path(output_dir)
@@ -19,6 +22,18 @@ def get_training_config(mode: str, output_dir: str = ".") -> dict:
         eval_every = 25
         eval_episodes = 5
         audit_episodes = 5
+    elif normalized_mode == "curriculum_p1":
+        # Phase 1: easy bots — bootstrap the agent with achievable successes
+        total_timesteps = 50_000
+        eval_every = 500
+        eval_episodes = 30
+        audit_episodes = 30
+    elif normalized_mode == "curriculum_p2":
+        # Phase 2: hard bots — transfer learning from phase 1 checkpoint
+        total_timesteps = 150_000
+        eval_every = 1_000
+        eval_episodes = 50
+        audit_episodes = 50
     else:
         total_timesteps = 20_000
         eval_every = 500
@@ -43,6 +58,7 @@ def get_training_config(mode: str, output_dir: str = ".") -> dict:
         "device": "cpu",
         "output_dir": str(out_dir),
         "model_path": str(out_dir / "ppo_redteam"),
+        "curriculum_p1_model_path": str(out_dir / "ppo_curriculum_p1"),
         "metrics_path": str(out_dir / "training_metrics.json"),
         "hall_of_fame_path": str(out_dir / "hall_of_fame.json"),
         "logs_dir": str(out_dir / "logs"),

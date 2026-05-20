@@ -3,11 +3,16 @@
 
 set -e
 
+# Ensure uv is on PATH (installed to ~/.local/bin on EC2)
+# shellcheck source=/dev/null
+[ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
+
 # Number of parallel workers
 N_WORKERS=${1:-4}
 BASE_PORT=8000
+DIFFICULTY=${2:-hard}
 
-echo "Launching $N_WORKERS target bot instances..."
+echo "Launching $N_WORKERS target bot instances (difficulty=$DIFFICULTY)..."
 
 # Kill existing instances on these ports (if any)
 for i in $(seq 0 $((N_WORKERS - 1))); do
@@ -24,7 +29,7 @@ done
 for i in $(seq 0 $((N_WORKERS - 1))); do
     PORT=$((BASE_PORT + i))
     echo "Starting target bot on port $PORT..."
-    uv run uvicorn target_bot:app --host 0.0.0.0 --port $PORT > "target_bot_$PORT.log" 2>&1 &
+    DIFFICULTY=$DIFFICULTY uv run uvicorn target_bot:app --host 0.0.0.0 --port $PORT > "target_bot_$PORT.log" 2>&1 &
     sleep 1
 done
 

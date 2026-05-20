@@ -22,7 +22,7 @@ from training.preflight import (
 log = logging.getLogger(__name__)
 
 
-def run_training(mode: str = "normal", output_dir: str = ".") -> dict:
+def run_training(mode: str = "normal", output_dir: str = ".", pretrained_model: str | None = None) -> dict:
     config = get_training_config(mode=mode, output_dir=output_dir)
     configure_logging(config)
 
@@ -44,23 +44,32 @@ def run_training(mode: str = "normal", output_dir: str = ".") -> dict:
     n_steps_per_env = 128 // n_workers if n_workers > 1 else 128
     n_steps_per_env = max(32, n_steps_per_env)
 
-    model = PPO(
-        "MlpPolicy",
-        train_env,
-        learning_rate=config["learning_rate"],
-        n_steps=n_steps_per_env,
-        batch_size=config["batch_size"],
-        gamma=config["gamma"],
-        ent_coef=config["ent_coef"],
-        seed=config["seed"],
-        device=config["device"],
-        verbose=1,
-    )
+    if pretrained_model:
+        log.info("Loading pretrained model from %s", pretrained_model)
+        model = PPO.load(pretrained_model, env=train_env, device=config["device"])
+    else:
+        model = PPO(
+            "MlpPolicy",
+            train_env,
+            learning_rate=config["learning_rate"],
+            n_steps=n_steps_per_env,
+            batch_size=config["batch_size"],
+            gamma=config["gamma"],
+            ent_coef=config["ent_coef"],
+            seed=config["seed"],
+            device=config["device"],
+            verbose=1,
+        )
 
     model.learn(total_timesteps=config["total_timesteps"], callback=callback)
 
     Path(config["output_dir"]).mkdir(parents=True, exist_ok=True)
-    model.save(config["model_path"])
+
+    # Curriculum phase 1 saves to a dedicated path so phase 2 can load it
+    save_path = config["curriculum_p1_model_path"] if mode == "curriculum_p1" else config["model_path"]
+    model.save(save_path)
+    log.info("Model saved to %s", save_path)
+
     callback.save_metrics(config["metrics_path"])
     save_hall_of_fame(config["hall_of_fame_path"])
 
@@ -72,14 +81,15 @@ def run_training(mode: str = "normal", output_dir: str = ".") -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run PPO training for RL prompt-injection agent")
-    parser.add_argument("--mode", choices=["quick", "normal"], default="normal")
+    parser.add_argument("--mode", choices=["quick", "normal", "curriculum_p1", "curriculum_p2"], default="normal")
     parser.add_argument("--output-dir", default=".")
+    parser.add_argument("--pretrained-model", default=None, help="Path to pretrained model zip to resume from")
     args = parser.parse_args()
 
     config = get_training_config(mode=args.mode, output_dir=args.output_dir)
     notify_training_started(args.mode)
     try:
-        metrics = run_training(mode=args.mode, output_dir=args.output_dir)
+        metrics = run_training(mode=args.mode, output_dir=args.output_dir, pretrained_model=args.pretrained_model)
         notify_training_complete(args.mode, metrics or {})
 
         hof_path = Path(config["hall_of_fame_path"])
